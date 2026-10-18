@@ -4,6 +4,9 @@ name: CI
 # expects: a check literally named `lint` (the tool's expected-CI marker) and a check run
 # named `cla/google` (the target's CLA bot check). Both substitute for Google-side
 # infrastructure the lab does not have; all other inputs (owner/name/branches) are real.
+# On this org, the Actions token cannot create check runs (org policy: write permissions
+# for workflows disabled), so the cla/google emulation step is best-effort: when blocked
+# it continues, leaving only the CLA validation as a force-ignorable failure for the tool.
 
 on:
   pull_request:
@@ -23,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Publish the cla/google check run (CLA-bot stand-in)
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -32,4 +36,5 @@ jobs:
             -f name="cla/google" \
             -f head_sha="$HEAD_SHA" \
             -f status=completed \
-            -f conclusion=success
+            -f conclusion=success \
+          || echo "cla/google check-run creation not permitted (org policy); continuing"
